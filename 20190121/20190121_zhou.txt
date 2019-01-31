@@ -1,0 +1,128 @@
+#include "func.h"
+
+int main(int args, char **argv)
+{
+	args_check(args,3);
+	int fdr = open(argv[1],O_RDONLY);	//open pipe1 as the read pipe
+	if(-1==fdr)
+	{
+		perror("open read pipe");
+		return -1;
+	}
+	int fdw = open(argv[2],O_WRONLY);	//open pipe2 as the write pipe
+	if(-1==fdw)
+	{
+		perror("open write pipe");
+		return -1;
+	}
+	printf("I am chat1\n");
+	char buf[128]={0};
+	int ret;
+	fd_set rdset;
+	struct timeval t;
+	while(1)
+	{
+		FD_ZERO(&rdset);
+		FD_SET(0,&rdset);
+		FD_SET(fdr,&rdset);
+		memset(&t,0,sizeof(t));
+		t.tv_sec=3;
+		ret = select(fdr+1,&rdset,NULL,NULL,&t);//test fdr and fdw!!
+		if(0<ret)
+		{
+			//read from stdin and write into write pipe(2)
+			if(FD_ISSET(STDIN_FILENO,&rdset))
+			{
+				memset(buf,0,sizeof(buf));
+				ret = read(STDIN_FILENO,buf,sizeof(buf));
+				if(0==ret)
+				{
+					printf("bye\n");
+					break;
+				}
+				write(fdw,buf,strlen(buf)-1);
+			}
+			if(FD_ISSET(fdr,&rdset))  //read from read pipe(1) and write into stdout
+			{
+				memset(buf,0,sizeof(buf));
+				ret = read(fdr,buf,sizeof(buf));
+				if(0==ret)
+				{
+					printf("bye\n");
+					break;
+				}
+				printf("%s\n",buf);
+			}
+		}else{
+			printf("select timeout\n");
+		}
+	}
+	close(fdr);
+	close(fdw);
+	return 0;
+}
+#include "func.h"
+
+int main(int args, char **argv)
+{
+	args_check(args,3);
+	int fdw = open(argv[1],O_WRONLY);	//open pipe1 as the write pipe
+	if(-1==fdw)
+	{
+		perror("open write pipe");
+		return -1;
+	}
+	int fdr = open(argv[2],O_RDONLY);	//open pipe2 as the read pipe
+	if(-1==fdr)
+	{
+		perror("open read pipe");
+		return -1;
+	}
+	printf("I am chat2\n");
+	char buf[128]={0};
+	int ret;
+	fd_set rdset;
+	while(1)
+	{
+		FD_ZERO(&rdset);
+		FD_SET(0,&rdset);
+		FD_SET(fdr,&rdset);
+		ret = select(fdr+1,&rdset,NULL,NULL,NULL);//test fdr and fdw!!
+		if(0<ret)
+		{
+			//read from stdin and write into write pipe(2)
+			if(FD_ISSET(STDIN_FILENO,&rdset))
+			{
+				memset(buf,0,sizeof(buf));
+				ret = read(STDIN_FILENO,buf,sizeof(buf));
+				if(0==ret)
+				{
+					printf("bye\n");
+					break;
+				}
+				write(fdw,buf,strlen(buf)-1);
+			}
+			if(FD_ISSET(fdr,&rdset))  //read from read pipe(1) and write into stdout
+			{
+				memset(buf,0,sizeof(buf));
+				ret = read(fdr,buf,sizeof(buf));
+				if(0==ret)
+				{
+					printf("bye\n");
+					break;
+				}
+				printf("%s\n",buf);
+			}
+		}
+	}
+	close(fdr);
+	close(fdw);
+	return 0;
+}
+#include "func.h"
+
+int main()
+{
+	printf("pid=%d ppid=%d\n",getpid(),getppid());
+	return 0;
+}

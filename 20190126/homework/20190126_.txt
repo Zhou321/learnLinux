@@ -1,0 +1,99 @@
+#include <func.h>
+
+void sig3Handler(int iSigNum,siginfo_t *p, void *p1)
+{
+    printf("before sleep is signal %d\n",iSigNum);
+    sleep(3);
+    sigset_t setPend;
+    sigpending(&setPend);
+    if(sigismember(&setPend,SIGQUIT))
+    {
+        printf("SIGQUIT is in pending set\n");
+    }else{
+        printf("SIGQUIT is not in pending set\n");
+            }
+    printf("after sleep is signal %d\n",iSigNum);
+}
+
+int main()
+{
+    struct sigaction act;
+    memset(&act,0,sizeof(act));
+    act.sa_sigaction = sig3Handler;
+    act.sa_flags = SA_SIGINFO;
+    sigemptyset(&act.sa_mask);
+    sigaddset(&act.sa_mask,SIGQUIT);
+    sigaction(SIGINT,&act,NULL);
+    sigaction(SIGQUIT,&act,NULL);
+    while(1);
+    return 0;
+}
+
+#include <func.h>
+
+void signalHandler(int sigNum, siginfo_t *p,void *p1)
+{
+    printf("signal%d is coming\n",sigNum);
+}
+int main()
+{
+    struct sigaction act;
+    memset(&act,0,sizeof(act));
+    act.sa_flags=SA_SIGINFO|SA_NODEFER;
+    act.sa_sigaction=signalHandler;
+    int ret = sigaction(SIGINT,&act,NULL);
+    if(-1==ret)
+    {
+        perror("fail to sigaction");
+        return -1;
+    }
+    while(1);
+    return 0;
+}
+
+#include <func.h>
+void sigHandler(int sigNum,siginfo_t *p,void *p1)
+{
+    printf("enter signal %d\n",sigNum);
+}
+
+int main()
+{
+    sigset_t sigBlockSet;
+    sigset_t sigBloRes;
+    sigemptyset(&sigBlockSet);
+    sigaddset(&sigBlockSet,SIGINT);
+    sigprocmask(SIG_BLOCK,&sigBlockSet,NULL);
+    struct sigaction act;
+    act.sa_sigaction=sigHandler;
+    act.sa_flags=SA_SIGINFO;
+    sigaction(SIGINT,&act,NULL);
+    sleep(5);
+    sigpending(&sigBloRes);
+    if(sigismember(&sigBloRes,SIGINT))
+    {
+        printf("Signals are being blocked\n");
+    }else{
+        printf("no signals are being blocked\n");
+    }
+    sigprocmask(SIG_UNBLOCK,&sigBlockSet,NULL);
+    return 0;
+}
+
+#include <func.h>
+
+
+void sigfunc(int sigNum)
+{
+    printf("before sleep is signal %d\n",sigNum);
+    sleep(3); 
+    printf("after sleep is signal %d\n",sigNum);
+}
+int main()
+{
+    signal(SIGINT,sigfunc);
+    signal(SIGQUIT,sigfunc);
+    while(1);
+    return 0;
+}
+
